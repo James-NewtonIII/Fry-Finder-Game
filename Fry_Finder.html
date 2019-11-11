@@ -1,0 +1,439 @@
+<HTML>
+<meta charset="utf-8"/>
+<head></head>
+
+<body>
+<style>
+    #canvas {
+        width:90%;
+        height:90%;
+		
+    }
+</style>
+<canvas id="canvas" width="500" height="500"  style="border: 1px solid black" ></canvas>
+<img id='test' src=' http://www.clker.com/cliparts/n/y/e/0/6/K/simple-cartoon-house-md.png' hidden=true>
+
+<!-- the image of the fries was found at http://www.clker.com/cliparts/4/8/a/6/1194984081402633375french_fries_juliane_kr_r.svg.med.png -->
+<img id="fries"  src='http://www.clker.com/cliparts/4/8/a/6/1194984081402633375french_fries_juliane_kr_r.svg.med.png' hidden=true>
+<p id='output'></p>
+
+<script>
+
+var canvas = document.getElementById("canvas");
+var context = canvas.getContext("2d");
+
+//declarations for images and boolean values
+var image,fries,checkColl, allLoaded = false;
+
+//call to the init function
+init();
+
+//game score
+var score =0;
+
+//x and z values for the houses
+var zValues = [-11,-7,15,-8,
+				14,0,-3,13,
+				17,2,14,-1,
+				-12,22,-13,-10,
+				-19,18,18,-15,
+				6,0,19,-5,
+				-2,-6,10,-11,
+				9,-11];
+
+var xValues = [0,-6,10,-3,
+			   13,-8,5,21,
+			   -12,-7,22,16,
+			   -1,-11,-3,-0,
+			    5,5,-4,-11,
+			   14,-6,-10,-2,
+			   13,4,1,-21,
+			   -13,11];			   
+//x and z values for fries
+
+var fryZ = 	  [-13,-9,17,-10,
+				16,2,-5,15,
+				19,4,16,-3,
+				-14,24,-15,-12,
+				-21,20,20,-17,
+				8,2,21,-7,
+				-4,-8,12,-13,
+				11,-13];
+
+var fryX = 	  [0,-6,10,-3,
+			   13,-8,5,21,
+			   -12,-7,22,16,
+			   -1,-11,-3,-0,
+			    5,5,-4,-11,
+			   14,-6,-10,-2,
+			   13,4,1,-21,
+			   -13,11];
+//x and z values			   
+var z=5;
+var x=2;		   
+			   
+//declaring the arrays for drawing houses and fries
+var drawArr= [];
+var drawAll=[];
+var drawFries=[];
+
+//populating the x and y values in drawArr
+for(var i = 0; i<xValues.length; i++){
+	drawArr[i]=[];
+	drawArr[i][0]=xValues[i];
+	drawArr[i][1]=zValues[i];
+}
+//populating x and z values in drawFries
+for(var i = 0; i<fryX.length; i++){
+	drawFries[i]=[];
+	drawFries[i][0]=fryX[i];
+	drawFries[i][1]=fryZ[i];
+}
+//populating drawAll
+drawAll[0]=drawFries;
+drawAll[1]=drawArr;
+
+//sorting the draw array sort function found at https://stackoverflow.com/questions/16096872/how-to-sort-2-dimensional-array-by-column-value 
+// I made two small modifications to the original to accomadate my array, and that the view is looking down the -z axis
+function sortFunction(a, b) {
+    if (a[1] === b[1]) {
+        return 0;
+    }
+    else {
+        return (a[1] > b[1]) ? -1 : 1;
+    }
+}
+//initially sorting drawArr and drawAll
+drawArr.sort(sortFunction);
+drawAll[0].sort(sortFunction);
+drawAll[1].sort(sortFunction);
+//display values	
+var scale = 1 / z;		
+var displayX=x/z;
+var displayY = 0;
+
+//helps draw images on screen to scale as you move
+function drawCustomImage(image, x, y, scale){
+			var imageWidth= scale*2;
+			var imageHeight= scale*2;
+		
+			context.drawImage(image, x - imageWidth/2, y - imageHeight/2, imageWidth, imageHeight );
+}
+function drawScene(){
+	
+	//these are the sky and ground variables, brown was found at: https://www.rapidtables.com/web/color/brown-color.html
+	//blue was found at: https://www.rapidtables.com/web/color/blue-color.html
+	context.fillStyle="#ADD8E6";
+	context.fillRect(-1, -1, 2,1);
+	context.fillStyle="#A0522D";
+	context.fillRect(-1,0,2,1);
+	//updating the game score
+	document.getElementById("output").innerHTML = 'score: '+score;
+		
+		
+		
+		
+		//for loop for drawing fries on the scr
+		for(var i=0; i<drawAll[0].length; i++){
+			drawAll[0].sort(sortFunction);
+			drawAll[1].sort(sortFunction);
+			if((drawAll[0][i][1]>0) ){
+				
+				scale = (1 /drawAll[0][i][1])/4;
+				displayX= drawAll[0][i][0]/drawAll[0][i][1];
+				displayY = 0;		
+				//sorting the fries so they are drawn by closeness
+				drawAll[0].sort(sortFunction);
+				//drawing the fries
+				drawCustomImage(fries, displayX, displayY, scale);
+			}	
+			
+		}
+		//drawing the houses
+		for(var i=0; i<drawAll[1].length; i++){
+			//if statement so that movements work properly
+			if(drawAll[1][i][1]>0){
+				
+				scale = 1 /drawAll[1][i][1];
+				displayX= drawAll[1][i][0]/drawAll[1][i][1];
+				displayY = 0;
+			
+				//sorting the drawArr function
+				drawAll[1].sort(sortFunction);
+				//drawing houses on the screen
+				drawCustomImage(image, displayX, displayY, scale);
+			}	
+		}
+		
+		
+		
+		
+}
+
+function doKeyUp(evt) {
+}
+
+function doKeyDown(evt) {
+        var code = evt.keyCode;  // Numerical code for key that was pressed.
+        switch (code) {
+		case 37:  // left arrow key
+			var theta = -1.0 * 3.14 / 180.0;
+			
+			//for loops for updating houses
+			for(var i=0; i<drawAll[1].length; i++){
+				drawAll[1][i][0]=drawAll[1][i][0] * Math.cos(theta) - drawAll[1][i][1] * Math.sin(theta);
+			}
+			for(var i=0; i<drawAll[1].length; i++){
+				
+				drawAll[1][i][1]=drawAll[1][i][0] * Math.sin(theta) + drawAll[1][i][1] * Math.cos(theta);
+			}
+			
+			//for loops for updating fries
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][0]=drawAll[0][i][0] * Math.cos(theta) - drawAll[0][i][1] * Math.sin(theta);
+			}
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][1]=drawAll[0][i][0] * Math.sin(theta) + drawAll[0][i][1] * Math.cos(theta);
+			}
+			drawScene();
+		    break;
+		case 39:  // right arrow key
+			var theta = 1.0 * 3.14 / 180.0;
+			//for loops for updating houses
+			for(var i=0; i<drawAll[1].length; i++){
+				drawAll[1][i][0]=drawAll[1][i][0] * Math.cos(theta) - drawAll[1][i][1] * Math.sin(theta);
+			}
+			for(var i=0; i<drawAll[1].length; i++){
+				
+				drawAll[1][i][1]=drawAll[1][i][0] * Math.sin(theta) + drawAll[1][i][1] * Math.cos(theta);
+			}
+			
+			//for loops for updating fries
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][0]=drawAll[0][i][0] * Math.cos(theta) - drawAll[0][i][1] * Math.sin(theta);
+			}
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][1]=drawAll[0][i][0] * Math.sin(theta) + drawAll[0][i][1] * Math.cos(theta);
+			}
+			
+			drawScene();
+		    break;
+		case 38:  // up arrow key
+			checkColl=false;
+			for(var i=0; i<drawAll[1].length; i++){
+				
+				//if statement that checks if the camera is trying to go through a house
+				if((Math.abs(drawAll[1][i][0])<=1 && Math.abs(drawAll[1][i][1])<=1)){
+					checkColl=true;	
+				}
+			}
+			//moving the camera forward
+			for(var i=0; i<drawAll[1].length; i++){
+				var moveFor=0.1;
+				
+				if((Math.abs(drawAll[1][i][0])<=1 && Math.abs(drawAll[1][i][1])<=1)){
+					checkColl=true;
+				}
+				if(checkColl){
+					moveFor=0;
+				}
+				//the movement of the z value	
+				drawAll[1][i][1]-=moveFor;	
+			}
+			//movement of fries with upward arrow
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][1]-=moveFor;
+				
+				if((Math.abs(drawAll[0][i][0])<=.5 && Math.abs(drawAll[0][i][1])<=.5)){
+					//updating score and deleting found fries
+					score+=1;
+					drawAll[0].splice(i);
+					console.log(score);
+				}	
+			}
+			
+			drawScene();
+		    break;
+		
+		case 40:  // down arrow key
+			checkColl=false;
+			for(var i=0; i<drawAll[1].length; i++){
+				
+				//if statement that checks if the camera is trying to go through a house
+				if((Math.abs(drawAll[1][i][0])<=0.5 && Math.abs(drawAll[1][i][1])<=0.5)){
+					checkColl=true;	
+				}
+			}
+			//moving the camera forward
+			for(var i=0; i<drawAll[1].length; i++){
+				var moveFor=0.1;
+				
+				if((Math.abs(drawAll[1][i][0])<=0.5 && Math.abs(drawAll[1][i][1])<=0.5)){
+					checkColl=true;
+				}
+				if(checkColl){
+					moveFor=0;
+				}
+				//the movement of the z value	
+				drawAll[1][i][1]+=moveFor;	
+			}
+			//movement of fries with upward arrow
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][1]+=moveFor;
+				
+				if((Math.abs(drawAll[0][i][0])<=.5 && Math.abs(drawAll[0][i][1])<=.5)){
+					//updating score and deleting found fries
+					score+=1;
+					drawAll[0].splice(i);
+					console.log(score);
+				}	
+			}
+			
+			
+			drawScene();
+		    break;
+			
+		case 87:  // w key
+			checkColl=false;
+			for(var i=0; i<drawAll[1].length; i++){
+				
+				//if statement that checks if the camera is trying to go through a house
+				if((Math.abs(drawAll[1][i][0])<=1 && Math.abs(drawAll[1][i][1])<=1)){
+					checkColl=true;	
+				}
+			}
+			//moving the camera forward
+			for(var i=0; i<drawAll[1].length; i++){
+				var moveFor=0.1;
+				
+				if((Math.abs(drawAll[1][i][0])<=1 && Math.abs(drawAll[1][i][1])<=1)){
+					checkColl=true;
+				}
+				if(checkColl){
+					moveFor=0;
+				}
+				//the movement of the z value	
+				drawAll[1][i][1]-=moveFor;	
+			}
+			//movement of fries with upward arrow
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][1]-=moveFor;
+				
+				if((Math.abs(drawAll[0][i][0])<=.5 && Math.abs(drawAll[0][i][1])<=.5)){
+					//updating score and deleting found fries
+					score+=1;
+					drawAll[0].splice(i);
+					console.log(score);
+				}	
+			}
+			
+			drawScene();
+		    break;
+			
+		case 83:  // S key
+			checkColl=false;
+			for(var i=0; i<drawAll[1].length; i++){
+				
+				//if statement that checks if the camera is trying to go through a house
+				if((Math.abs(drawAll[1][i][0])<=0.5 && Math.abs(drawAll[1][i][1])<=0.5)){
+					checkColl=true;	
+				}
+			}
+			//moving the camera forward
+			for(var i=0; i<drawAll[1].length; i++){
+				var moveFor=0.1;
+				
+				if((Math.abs(drawAll[1][i][0])<=0.5 && Math.abs(drawAll[1][i][1])<=0.5)){
+					checkColl=true;
+				}
+				if(checkColl){
+					moveFor=0;
+				}
+				//the movement of the z value	
+				drawAll[1][i][1]+=moveFor;	
+			}
+			//movement of fries with upward arrow
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][1]+=moveFor;
+				
+				if((Math.abs(drawAll[0][i][0])<=.5 && Math.abs(drawAll[0][i][1])<=.5)){
+					//updating score and deleting found fries
+					score+=1;
+					drawAll[0].splice(i);
+					console.log(score);
+				}	
+			}
+			
+			drawScene();
+		    break;	
+			
+		case 68: //D key
+			var theta = 1.0 * 3.14 / 180.0;
+				
+			for(var i=0; i<drawAll[1].length; i++){
+				drawAll[1][i][0]=drawAll[1][i][0] * Math.cos(theta) - drawAll[1][i][1] * Math.sin(theta);
+			}
+			for(var i=0; i<drawAll[1].length; i++){
+				
+				drawAll[1][i][1]=drawAll[1][i][0] * Math.sin(theta) + drawAll[1][i][1] * Math.cos(theta);
+			}
+			
+			//for loops for updating fries
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][0]=drawAll[0][i][0] * Math.cos(theta) - drawAll[0][i][1] * Math.sin(theta);
+			}
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][1]=drawAll[0][i][0] * Math.sin(theta) + drawAll[0][i][1] * Math.cos(theta);
+			}
+						
+			drawScene();
+			break;
+		//A key: case 65
+		case 65: 
+			var theta = -1.0 * 3.14 / 180.0;
+			
+			for(var i=0; i<drawAll[1].length; i++){
+				drawAll[1][i][0]=drawAll[1][i][0] * Math.cos(theta) - drawAll[1][i][1] * Math.sin(theta);
+			}
+			for(var i=0; i<drawAll[1].length; i++){
+				
+				drawAll[1][i][1]=drawAll[1][i][0] * Math.sin(theta) + drawAll[1][i][1] * Math.cos(theta);
+			}
+			
+			//for loops for updating fries
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][0]=drawAll[0][i][0] * Math.cos(theta) - drawAll[0][i][1] * Math.sin(theta);
+			}
+			for(var i=0; i<drawAll[0].length; i++){
+				drawAll[0][i][1]=drawAll[0][i][0] * Math.sin(theta) + drawAll[0][i][1] * Math.cos(theta);
+			}
+			//drawScene	call
+			drawScene();
+			break;
+		
+		default:
+		    break;
+        }
+}
+//the init function    
+function init() {
+	//assigning the html canvas to a variable
+	canvas = document.getElementById("canvas");
+	//assigning house and fry images
+	image = document.getElementById("test");
+	fries = document.getElementById("fries");
+	
+	image.onload = function imageLoaded() {
+
+		//translating and scaling
+		context.translate(canvas.width/2, canvas.height/2);
+		context.scale(canvas.width/2, canvas.height/2);
+				
+		//eventlistener and drawScene
+		document.addEventListener("keydown", doKeyDown, false);
+		drawScene();
+	}	
+}
+</script>
+</body>
+</html>
